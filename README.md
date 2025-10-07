@@ -17,6 +17,11 @@ A robust financial transaction system built with Golang, Gin framework, and Post
 - Docker & Docker Compose (for containerized deployment)
 - Make (for using Makefile commands)
 
+## Assumptions
+-  Currency is not considered here, but can be easily implemented in both the transactions and accounts table.
+- Authentication can be implemented with the convenience of Gin's middleware
+- Index should be properly implemented in transactions table if there is a need to frequently query transaction records
+
 ## Running Locally
 
 ### Option 1: Using Docker Compose (Recommended)
@@ -33,7 +38,7 @@ A robust financial transaction system built with Golang, Gin framework, and Post
    docker-compose up --build
    ```
 
-3. **The API will be available at:** `http://localhost:8080`
+3. **The API will be available at:** `http://localhost:8080` and you can curl the `http://localhost:8080/health` endpoint to check if the application is up and running.
 
 4. **Stop the application:**
    ```bash
@@ -71,14 +76,7 @@ A robust financial transaction system built with Golang, Gin framework, and Post
    export PORT=8080
    ```
 
-4. **Install dependencies:**
-   ```bash
-   make deps
-   # OR
-   go mod download
-   ```
-
-5. **Run the application:**
+4. **Run the application:**
    ```bash
    make run
    # OR
@@ -97,109 +95,6 @@ The binary will be created at `bin/transfer-system`
 ```bash
 make clean
 ```
-
-## Deployment
-
-### Deploy to Remote Server
-
-1. **Build and push Docker image:**
-   ```bash
-   # Build the image
-   docker build -t your-registry/transfer-system:latest .
-
-   # Push to registry
-   docker push your-registry/transfer-system:latest
-   ```
-
-2. **On the remote server, create docker-compose.yml:**
-   ```yaml
-   version: '3.8'
-
-   services:
-     postgres:
-       image: postgres:15-alpine
-       environment:
-         POSTGRES_USER: postgres
-         POSTGRES_PASSWORD: <secure-password>
-         POSTGRES_DB: transfer_system
-       volumes:
-         - postgres_data:/var/lib/postgresql/data
-         - ./migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
-       restart: always
-
-     app:
-       image: your-registry/transfer-system:latest
-       environment:
-         DB_HOST: postgres
-         DB_PORT: 5432
-         DB_USER: postgres
-         DB_PASSWORD: <secure-password>
-         DB_NAME: transfer_system
-         DB_SSLMODE: disable
-         PORT: 8080
-       ports:
-         - "8080:8080"
-       depends_on:
-         - postgres
-       restart: always
-
-   volumes:
-     postgres_data:
-   ```
-
-3. **Start the services:**
-   ```bash
-   docker-compose up -d
-   ```
-
-### Deploy as Standalone Binary
-
-1. **Build for target platform:**
-   ```bash
-   # For Linux
-   GOOS=linux GOARCH=amd64 go build -o transfer-system main.go
-
-   # For Windows
-   GOOS=windows GOARCH=amd64 go build -o transfer-system.exe main.go
-   ```
-
-2. **Transfer binary to server and set environment variables**
-
-3. **Run with systemd (Linux):**
-   Create `/etc/systemd/system/transfer-system.service`:
-   ```ini
-   [Unit]
-   Description=Transfer System API
-   After=network.target postgresql.service
-
-   [Service]
-   Type=simple
-   User=appuser
-   WorkingDirectory=/opt/transfer-system
-   Environment="DB_HOST=localhost"
-   Environment="DB_PORT=5432"
-   Environment="DB_USER=postgres"
-   Environment="DB_PASSWORD=<secure-password>"
-   Environment="DB_NAME=transfer_system"
-   Environment="PORT=8080"
-   ExecStart=/opt/transfer-system/transfer-system
-   Restart=on-failure
-
-   [Install]
-   WantedBy=multi-user.target
-   ```
-
-   Enable and start:
-   ```bash
-   sudo systemctl enable transfer-system
-   sudo systemctl start transfer-system
-   ```
-
-**Health Check:**
-```bash
-curl -X GET http://localhost:8080/health
-```
-
 ## Configuration
 
 Environment variables:
